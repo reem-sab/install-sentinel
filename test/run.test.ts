@@ -58,6 +58,19 @@ describe("runTarget", () => {
     expect(result.steps.filter((s) => s.status === "skipped").length).toBe(2);
   });
 
+  it("finds expected text that comes before the last 40 lines of output", async () => {
+    const result = await runTarget(
+      target({
+        sections: ["Prepare"],
+        assertions: [
+          { name: "Status line", run: 'echo "STATUS: deployed"; seq 1 60', expect: "STATUS: deployed", retries: 0, intervalSeconds: 0 },
+        ],
+      }),
+    );
+    expect(result.assertions[0].passed).toBe(true);
+    expect(result.assertions[0].outputTail).not.toContain("STATUS: deployed");
+  });
+
   it("fails on an end state check the guide does not meet", async () => {
     const result = await runTarget(
       target({ sections: ["Prepare"], assertions: [{ name: "Missing", run: "test -f nope.txt", retries: 1, intervalSeconds: 0 }] }),

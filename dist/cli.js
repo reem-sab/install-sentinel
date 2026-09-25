@@ -13416,6 +13416,7 @@ var ShellSession = class {
   run(script, options) {
     const started = Date.now();
     const tail = [];
+    let output = "";
     let partial = "";
     return new Promise((resolve) => {
       const child = spawn("bash", ["-c", this.wrap(script)], {
@@ -13427,6 +13428,7 @@ var ShellSession = class {
       const collect = (data) => {
         const text = data.toString();
         options.onOutput?.(text);
+        output += text;
         const lines = (partial + text).split("\n");
         partial = lines.pop() ?? "";
         tail.push(...lines);
@@ -13449,6 +13451,7 @@ var ShellSession = class {
           exitCode: timedOut ? 124 : code ?? 1,
           timedOut,
           durationMs: Date.now() - started,
+          output,
           outputTail: tail.slice(-TAIL_LINES)
         });
       });
@@ -13553,8 +13556,7 @@ async function check(session, assertion, timeoutMs) {
   let last;
   for (let attempt = 1; attempt <= assertion.retries + 1; attempt++) {
     last = await session.run(assertion.run, { timeoutMs });
-    const output = last.outputTail.join("\n");
-    const passed = last.exitCode === 0 && (assertion.expect === void 0 || output.includes(assertion.expect));
+    const passed = last.exitCode === 0 && (assertion.expect === void 0 || last.output.includes(assertion.expect));
     if (passed) return { assertion, passed, attempts: attempt, outputTail: last.outputTail };
     if (attempt <= assertion.retries) await sleep(assertion.intervalSeconds * 1e3);
   }

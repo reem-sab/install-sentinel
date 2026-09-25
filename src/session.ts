@@ -12,6 +12,8 @@ export interface StepOutcome {
   exitCode: number;
   timedOut: boolean;
   durationMs: number;
+  /** All of stdout and stderr, combined, so an end state check can search every line. */
+  output: string;
   /** Last lines of combined stdout and stderr, for the report. */
   outputTail: string[];
 }
@@ -39,6 +41,7 @@ export class ShellSession {
   run(script: string, options: RunOptions): Promise<StepOutcome> {
     const started = Date.now();
     const tail: string[] = [];
+    let output = "";
     let partial = "";
 
     return new Promise((resolve) => {
@@ -54,6 +57,7 @@ export class ShellSession {
       const collect = (data: Buffer) => {
         const text = data.toString();
         options.onOutput?.(text);
+        output += text;
         const lines = (partial + text).split("\n");
         partial = lines.pop() ?? "";
         tail.push(...lines);
@@ -79,6 +83,7 @@ export class ShellSession {
           exitCode: timedOut ? 124 : (code ?? 1),
           timedOut,
           durationMs: Date.now() - started,
+          output,
           outputTail: tail.slice(-TAIL_LINES),
         });
       });

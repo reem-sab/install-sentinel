@@ -136,8 +136,9 @@ async function check(session: ShellSession, assertion: Assertion, timeoutMs: num
   let last: StepOutcome | undefined;
   for (let attempt = 1; attempt <= assertion.retries + 1; attempt++) {
     last = await session.run(assertion.run, { timeoutMs });
-    const output = last.outputTail.join("\n");
-    const passed = last.exitCode === 0 && (assertion.expect === undefined || output.includes(assertion.expect));
+    // Match against the full output. Commands like `helm status` print the line a
+    // check looks for near the top, above more than a report tail's worth of notes.
+    const passed = last.exitCode === 0 && (assertion.expect === undefined || last.output.includes(assertion.expect));
     if (passed) return { assertion, passed, attempts: attempt, outputTail: last.outputTail };
     if (attempt <= assertion.retries) await sleep(assertion.intervalSeconds * 1000);
   }
