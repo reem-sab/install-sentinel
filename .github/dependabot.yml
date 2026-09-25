@@ -11,6 +11,10 @@ updates:
         dependency-type: development
       runtime-dependencies:
         dependency-type: production
+    # The action runs on Node 24, so its types stay on 24.x.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
