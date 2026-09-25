@@ -24,7 +24,7 @@ jobs:
       matrix:
         target: [podinfo-next, podinfo-6.14]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # The guide creates its own cluster, so this only installs the kind binary.
       - uses: helm/kind-action@v1
         with:
