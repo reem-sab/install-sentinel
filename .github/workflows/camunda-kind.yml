@@ -19,7 +19,7 @@ jobs:
       matrix:
         target: [camunda-next, camunda-8.9, camunda-8.8]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Check out the Camunda docs (Self-Managed pages only)
         run: |
