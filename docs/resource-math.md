@@ -38,7 +38,9 @@ First run: [Camunda kind guide #1](https://github.com/reem-sab/install-sentinel/
 | Target | Result | Duration | Peak disk used | Notes |
 | --- | --- | --- | --- | --- |
 | camunda-next | Failed | 6m 16s | Not measured | Step 20, "Deploy Camunda 8", exited before it deployed anything. The script builds a pre-release chart and, when run without a terminal, requires `CAMUNDA_PRERELEASE_ACK=true` or `--yes`. |
-| camunda-8.9 | Failed | 11m 27s | Not measured | All 8 documented steps passed. The readiness script reported every pod Running and Healthy, and Helm reported chart `camunda-platform-14.10.0` as `deployed`. The job failed on a manifest assertion, not on a step. |
-| camunda-8.8 | Failed | 13m 11s | Not measured | All 5 documented steps passed. The readiness script reported every pod Running and Healthy, and Helm reported chart `camunda-platform-13.13.1` as `deployed`. The job failed on a manifest assertion, not on a step. |
+| camunda-8.9 | Failed | 11m 27s | Not measured | All 8 documented steps passed. The readiness script reported every pod Running and Healthy, and Helm reported chart `camunda-platform-14.10.0` as `deployed`. The job failed on the manifest check "The Helm release is deployed" after 1 attempt. The check looks for `STATUS: deployed` in the last 40 lines of `helm status` output, and the chart's release notes pushed that line out of those 40 lines. |
+| camunda-8.8 | Failed | 13m 11s | Not measured | All 5 documented steps passed. The readiness script reported every pod Running and Healthy, and Helm reported chart `camunda-platform-13.13.1` as `deployed`. The job failed on the manifest check "The Helm release is deployed" after 1 attempt. The check looks for `STATUS: deployed` in the last 40 lines of `helm status` output, and the chart's release notes pushed that line out of those 40 lines. |
 
 For camunda-next, the documented step "Deploy Camunda 8" failed because the deploy script stops for a pre-release confirmation that the guide's command does not pass in a non-interactive shell.
+
+For camunda-8.9 and camunda-8.8, no documented step failed. The failure is in Install Sentinel's check, not in the guide.
