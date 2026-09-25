@@ -1,0 +1,44 @@
+# Runs the Camunda 8 Self-Managed "kind" guide the way a reader would, in
+# no-domain mode with PostgreSQL secondary storage, across three doc versions.
+#
+# The workflow clones camunda/camunda-docs into ./camunda-docs first.
+# Paths here are relative to this file.
+
+defaults:
+  siteRoot: ../../camunda-docs
+  sections:
+    - Secondary storage options
+    - Download the reference architecture
+    - Create the Kubernetes cluster
+    - No-domain mode deployment
+    - Verify deployment
+  teardown:
+    - Cleanup
+  skip:
+    # Makefile shortcuts repeat the manual steps this run already follows.
+    - '^\s*(SECONDARY_STORAGE=\w+ )?make '
+    # Watches pods until you press Ctrl+C. The readiness script covers the same wait.
+    - 'kubectl get pods .*-w\s*$'
+  env:
+    # The guide asks you to choose; PostgreSQL is the lighter of the two.
+    SECONDARY_STORAGE: postgres
+  stepTimeoutMinutes: 40
+  assertions:
+    - name: Three nodes are Ready
+      run: kubectl get nodes --no-headers | grep -cw Ready
+      expect: "3"
+    - name: The Helm release is deployed
+      run: helm status camunda -n camunda
+      expect: "STATUS: deployed"
+    - name: Every pod in the camunda namespace is ready
+      run: kubectl wait --for=condition=Ready pods --all -n camunda --timeout=60s
+      retries: 10
+      intervalSeconds: 30
+
+targets:
+  - name: camunda-next
+    guide: ../../camunda-docs/docs/self-managed/deployment/helm/cloud-providers/kind.md
+  - name: camunda-8.9
+    guide: ../../camunda-docs/versioned_docs/version-8.9/self-managed/deployment/helm/cloud-providers/kind.md
+  - name: camunda-8.8
+    guide: ../../camunda-docs/versioned_docs/version-8.8/self-managed/deployment/helm/cloud-providers/kind.md

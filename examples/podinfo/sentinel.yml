@@ -1,0 +1,28 @@
+# Runs a small versioned install guide end to end. It fits comfortably on a
+# free GitHub-hosted runner, so it proves the Action on every scheduled run.
+
+defaults:
+  teardown:
+    - Clean up
+  stepTimeoutMinutes: 10
+
+targets:
+  - name: podinfo-next
+    guide: docs/install.md
+    assertions:
+      - name: Two replicas are ready, as the guide promises
+        run: kubectl get deployment frontend-podinfo -n podinfo -o jsonpath='{.status.readyReplicas}'
+        expect: "2"
+      - name: The running version matches the version the guide installs
+        run: kubectl get deployment frontend-podinfo -n podinfo -o jsonpath='{.spec.template.spec.containers[0].image}'
+        expect: ":6.15.0"
+
+  - name: podinfo-6.14
+    guide: versioned_docs/version-6.14/install.md
+    assertions:
+      - name: Two replicas are ready, as the guide promises
+        run: kubectl get deployment frontend-podinfo -n podinfo -o jsonpath='{.status.readyReplicas}'
+        expect: "2"
+      - name: The running version matches the version the guide installs
+        run: kubectl get deployment frontend-podinfo -n podinfo -o jsonpath='{.spec.template.spec.containers[0].image}'
+        expect: ":6.14.1"

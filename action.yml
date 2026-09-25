@@ -1,0 +1,41 @@
+name: Install Sentinel
+description: Runs the install path a guide documents and reports the exact documented step that broke.
+author: Reem Sabawi
+branding:
+  icon: check-square
+  color: green
+
+inputs:
+  mode:
+    description: "validate checks code blocks without running them. run executes a guide from a manifest."
+    required: false
+    default: validate
+  paths:
+    description: "validate: newline-separated globs of Markdown and MDX files to check."
+    required: false
+  strict:
+    description: "validate: also parse every YAML block. Expect intentional fragments to show up."
+    required: false
+    default: "false"
+  fail-on:
+    description: "validate: fail the job on error, on warning, or never."
+    required: false
+    default: error
+  config:
+    description: "run: path to the manifest file."
+    required: false
+  target:
+    description: "run: name of one target in the manifest. Empty runs every target."
+    required: false
+
+outputs:
+  result:
+    description: passed or failed.
+  findings-count:
+    description: "validate: number of findings."
+  failed-step:
+    description: "run: heading and line of the first documented step that failed."
+
+runs:
+  using: node24
+  main: dist/index.js

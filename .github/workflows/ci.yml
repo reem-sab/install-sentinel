@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # The action runs from dist/, so dist/ has to match the source it was built from.
+      - name: Check that dist is up to date
+        run: |
+          if ! git diff --quiet -- dist/; then
+            echo "::error::dist/ is out of date. Run npm run build and commit the result."
+            git diff --stat -- dist/
+            exit 1
+          fi
+
+  validate-own-docs:
+    # The action checks this repository's example guides on every change.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./
+        with:
+          mode: validate
+          paths: examples/**/*.md
