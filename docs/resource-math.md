@@ -45,6 +45,24 @@ For camunda-next, the documented step "Deploy Camunda 8" failed because the depl
 
 For camunda-8.9 and camunda-8.8, no documented step failed. The failure is in Install Sentinel's check, not in the guide.
 
+Runs 2 and 3, Sept 25, 2026:
+
+- [Camunda kind guide #2](https://github.com/reem-sab/install-sentinel/actions/runs/36191715281), commit `bb778e1`, adds the `grep STATUS` workaround to the Helm check.
+- [Camunda kind guide #3](https://github.com/reem-sab/install-sentinel/actions/runs/36194081336), commit `56a2fca`, adds the fix that matches checks against full output, and `CAMUNDA_PRERELEASE_ACK` for camunda-next.
+
+| Run | Target | Result | Duration | Peak disk used | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 2 | camunda-next | Failed | 10m 50s | Not measured | Step 20, "Deploy Camunda 8", stopped at the pre-release confirmation, as in run 1. This run did not yet set `CAMUNDA_PRERELEASE_ACK`. |
+| 2 | camunda-8.9 | Passed | 8m 54s | Not measured | All steps and all three checks passed. |
+| 2 | camunda-8.8 | Passed | 10m 39s | Not measured | All steps and all three checks passed. |
+| 3 | camunda-next | Failed | 7m 10s | Not measured | Step 20, "Deploy Camunda 8", got past the pre-release confirmation and built chart `camunda-platform-8.10` from source. `helm install` then stopped with: "Camunda chart 15.x (8.10) requires Helm CLI v4 or later. Detected Helm CLI version: v3.22.0." |
+| 3 | camunda-8.9 | Passed | 9m 51s | Not measured | All steps and all three checks passed. |
+| 3 | camunda-8.8 | Passed | 13m 21s | Not measured | All steps and all three checks passed. |
+
+The released guides for 8.8 and 8.9 pass end to end on a public runner.
+
+For camunda-next, the unreleased docs deploy the in-development 8.10 chart, which requires Helm v4. The runner has Helm v3.22.0, so the documented step "Deploy Camunda 8" stopped before it installed anything.
+
 ## CI settings
 
 These settings let CI answer what a reader answers by hand. They are not docs findings.
