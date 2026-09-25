@@ -41,6 +41,14 @@ First run: [Camunda kind guide #1](https://github.com/reem-sab/install-sentinel/
 | camunda-8.9 | Failed | 11m 27s | Not measured | All 8 documented steps passed. The readiness script reported every pod Running and Healthy, and Helm reported chart `camunda-platform-14.10.0` as `deployed`. The job failed on the manifest check "The Helm release is deployed" after 1 attempt. The check looks for `STATUS: deployed` in the last 40 lines of `helm status` output, and the chart's release notes pushed that line out of those 40 lines. |
 | camunda-8.8 | Failed | 13m 11s | Not measured | All 5 documented steps passed. The readiness script reported every pod Running and Healthy, and Helm reported chart `camunda-platform-13.13.1` as `deployed`. The job failed on the manifest check "The Helm release is deployed" after 1 attempt. The check looks for `STATUS: deployed` in the last 40 lines of `helm status` output, and the chart's release notes pushed that line out of those 40 lines. |
 
-For camunda-next, the documented step "Deploy Camunda 8" failed because the deploy script stops for a pre-release confirmation that the guide's command does not pass in a non-interactive shell.
+For camunda-next, the documented step "Deploy Camunda 8" failed because the deploy script asks you to confirm that you are deploying a pre-release chart, and CI has no terminal to answer the prompt.
 
 For camunda-8.9 and camunda-8.8, no documented step failed. The failure is in Install Sentinel's check, not in the guide.
+
+## CI settings
+
+These settings let CI answer what a reader answers by hand. They are not docs findings.
+
+| Target | Setting | Why |
+| --- | --- | --- |
+| camunda-next | `CAMUNDA_PRERELEASE_ACK: "true"` in the target's `env` in `examples/camunda/sentinel.yml` | Next deploys a pre-release chart, and the deploy script asks you to confirm that. A reader answers the prompt. CI runs without a terminal, so the manifest answers it. |

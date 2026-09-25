@@ -40,6 +40,12 @@ defaults:
 targets:
   - name: camunda-next
     guide: ../../camunda-docs/docs/self-managed/deployment/helm/cloud-providers/kind.md
+    env:
+      # A target's env replaces the defaults, so repeat the storage choice here.
+      SECONDARY_STORAGE: postgres
+      # Next deploys a pre-release chart, and the deploy script asks you to confirm
+      # that. A reader answers the prompt; CI has no terminal, so answer it here.
+      CAMUNDA_PRERELEASE_ACK: "true"
   - name: camunda-8.9
     guide: ../../camunda-docs/versioned_docs/version-8.9/self-managed/deployment/helm/cloud-providers/kind.md
   - name: camunda-8.8
