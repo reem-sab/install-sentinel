@@ -28,7 +28,9 @@ defaults:
       run: kubectl get nodes --no-headers | grep -cw Ready
       expect: "3"
     - name: The Helm release is deployed
-      run: helm status camunda -n camunda
+      # The chart prints long release notes after the status line, and a check
+      # only reads the last 40 lines of output, so keep just the status line.
+      run: helm status camunda -n camunda | grep STATUS
       expect: "STATUS: deployed"
     - name: Every pod in the camunda namespace is ready
       run: kubectl wait --for=condition=Ready pods --all -n camunda --timeout=60s
