@@ -100,6 +100,6 @@ Commit messages use the `type(scope): description` format, in present tense.
 
 Ask before starting any of these.
 
-1. Install Helm v4 for the camunda-next target only, matching the version pinned in `camunda-deployment-references/.tool-versions`, so the Next guide can run past Deploy Camunda 8.
+1. Install Helm v4 for the camunda-next target only, matching the version pinned in `camunda-deployment-references/.tool-versions`, so the Next guide can run past Deploy Camunda 8. As of Sept 25, 2026, that file on `main` pins `helm 4.2.3`. Have the workflow read the version from `.tool-versions` at run time instead of hardcoding 4.2.3, because the pin will change.
 2. Add a README badge for `install-check.yml`.
 3. Add a `validate` job that checks `camunda-docs` Self-Managed pages weekly and reports without failing the build.
