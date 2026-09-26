@@ -101,6 +101,5 @@ Commit messages use the `type(scope): description` format, in present tense.
 Ask before starting any of these.
 
 1. Run `camunda-kind.yml` and fill in `docs/resource-math.md`.
-2. Tag `v0` so `reem-sab/install-sentinel@v0` resolves.
-3. Add a README badge for `install-check.yml`.
-4. Add a `validate` job that checks `camunda-docs` Self-Managed pages weekly and reports without failing the build.
+2. Add a README badge for `install-check.yml`.
+3. Add a `validate` job that checks `camunda-docs` Self-Managed pages weekly and reports without failing the build.
