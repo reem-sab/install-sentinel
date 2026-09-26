@@ -100,6 +100,6 @@ Commit messages use the `type(scope): description` format, in present tense.
 
 Ask before starting any of these.
 
-1. Run `camunda-kind.yml` and fill in `docs/resource-math.md`.
+1. Install Helm v4 for the camunda-next target only, matching the version pinned in `camunda-deployment-references/.tool-versions`, so the Next guide can run past Deploy Camunda 8.
 2. Add a README badge for `install-check.yml`.
 3. Add a `validate` job that checks `camunda-docs` Self-Managed pages weekly and reports without failing the build.
