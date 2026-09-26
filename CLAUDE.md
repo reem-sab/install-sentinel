@@ -67,13 +67,13 @@ These were checked against real sources on Sept 25, 2026.
 - **Validate against `camunda/camunda-docs`** returned 16 findings. All 16 are the two bug classes Reem fixed in PRs [#9937](https://github.com/camunda/camunda-docs/pull/9937) (tab in YAML) and [#9938](https://github.com/camunda/camunda-docs/pull/9938) (literal backticks). The bugs also exist in `version-8.8`, and the tab bug in `version-8.7`, which her PRs do not cover.
 - **The Camunda kind guide dry-run** selects 8 steps for Next and 8.9, and 5 steps for 8.8, whose guide is structured differently. The identity-secret step comes from the partial `_partials/_identity-secret.md`.
 - **A real partial run** of the first two Camunda steps passed. It fetched the reference script, cloned `camunda-deployment-references`, and kept the `cd` and the `SECONDARY_STORAGE` export.
-- **Public repo runners** have 4 CPU, 16 GB RAM, and 14 GB disk. Private repos get 2 CPU and 8 GB. The Camunda guide asks for 4 CPU and 8 GB with PostgreSQL storage, or 12 GB or more with Elasticsearch.
+- **Runners:** GitHub documents public repo runners as 4 CPUs and 16 GB RAM, and private repo runners as 2 CPUs and 8 GB. Runs 1 to 3 ran while the repo was private, and their logs show a 72 GB root filesystem with 34 GB free after cleanup. Future runs log CPU, memory, and disk before cleanup. The Camunda guide asks for 4 CPU and 8 GB with PostgreSQL storage, or 12 GB or more with Elasticsearch.
+- **The Camunda kind guide passed end to end** for 8.8 and 8.9 in runs 2 and 3. camunda-next stops at "Deploy Camunda 8" because the unreleased 8.10 chart needs Helm v4 and the runner has v3.22.0.
 
 ## Not yet verified
 
-- A full Camunda run in CI has never happened. The next step is to trigger `camunda-kind.yml` manually and record the result in `docs/resource-math.md`, whether it passes or fails.
-- The podinfo workflow has not run on GitHub yet.
-- `helm/kind-action@v1` with `install_only: true` is assumed, not tested in this repo.
+- Whether the podinfo workflow has run on GitHub.
+- camunda-next on a runner with Helm v4.
 
 ## Style for all prose
 
