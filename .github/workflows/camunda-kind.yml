@@ -27,10 +27,13 @@ jobs:
           cd camunda-docs
           git sparse-checkout set --no-cone '/docs/self-managed/' '/versioned_docs/*/self-managed/'
 
-      # A public runner has 4 CPUs, 16 GB of RAM, and 14 GB of disk. Disk runs out
-      # first, so remove toolchains this job never uses. See docs/resource-math.md.
+      # Record CPU, memory, and disk before cleanup, so each run shows the runner
+      # it got. Then remove toolchains this job never uses. See docs/resource-math.md.
       - name: Free disk space
         run: |
+          nproc
+          free -g
+          df -h /
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           docker system prune -af
           df -h /
