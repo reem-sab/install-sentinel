@@ -8,7 +8,7 @@ Install Sentinel is a TypeScript GitHub Action that runs the install path a guid
 
 It is the companion to [Doc Sentinel AI](https://github.com/reem-sab/doc-sentinel-ai). Doc Sentinel asks whether the docs still match the code. Install Sentinel asks whether the documented path still works when you run it.
 
-The owner is Reem Sabawi, a technical writer. She must be able to explain every line of this code out loud, without notes. That shapes how you work here (see "How to work with Reem").
+Every line of this code should be easy to explain. That shapes how you work here (see "Working rules").
 
 ## Commands
 
@@ -89,14 +89,12 @@ Code comments explain **why**, not what. Keep that pattern.
 
 Commit messages use the `type(scope): description` format, in present tense.
 
-## How to work with Reem
+## Working rules
 
-- Keep the code small and readable. She needs to walk through it in an interview. Prefer a clear 20 lines over a clever 5.
-- After any non-trivial change, explain what changed and why in plain language, so she can say it herself.
+- Keep the code small and readable. Prefer a clear 20 lines over a clever 5.
+- After any non-trivial change, explain what changed and why in plain language.
 - Do not overstate what the tool does. It reports; it does not fix. It tests the path through the page, not the referenced scripts, which belong to their own repo.
-- Do not frame findings about Camunda's docs as criticism. They are observations, stated as facts with file and line.
-- Present the project as the next question after Doc Sentinel, not as something built for an interview.
-- Be direct. Short answers. Complete deliverables over explanations.
+- Report findings about other projects' docs as facts, with file and line.
 
 ## Possible next work
 
