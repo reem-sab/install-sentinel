@@ -7,6 +7,7 @@ import { changedFiles, pullRequestBase } from "./changed.js";
 import { validatePaths } from "./commands.js";
 import { loadManifest } from "./manifest.js";
 import { describeMissing, renderFindings, renderRunReport } from "./report.js";
+import { syncIssues } from "./issues.js";
 import { describeStep, runTarget } from "./run.js";
 
 const rel = (file: string) => path.relative(process.env.GITHUB_WORKSPACE ?? process.cwd(), file);
@@ -76,6 +77,21 @@ async function run(): Promise<void> {
   }
 
   await core.summary.addRaw(renderRunReport(results)).write();
+
+  if (core.getBooleanInput("open-issues")) {
+    const repository = process.env.GITHUB_REPOSITORY ?? "";
+    const runUrl = `${process.env.GITHUB_SERVER_URL}/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+    const token = core.getInput("github-token", { required: true });
+    // A failure to reach the issue tracker should not hide the run's own result.
+    try {
+      for (const d of await syncIssues(results, { token, repository, runUrl, apiUrl: process.env.GITHUB_API_URL })) {
+        if (d.action !== "none") core.info(`Tracking issue: ${d.action}${"number" in d ? ` #${d.number}` : ""}`);
+      }
+    } catch (error) {
+      core.warning(`Could not update tracking issues: ${(error as Error).message}`);
+    }
+  }
+
   const firstFailure = results.find((r) => !r.passed);
   core.setOutput("result", firstFailure ? "failed" : "passed");
   core.setOutput("failed-step", firstFailure?.failedStep ? describeStep(firstFailure.failedStep.step) : "");

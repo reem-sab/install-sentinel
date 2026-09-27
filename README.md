@@ -85,6 +85,23 @@ Then run it:
 
 To check several doc versions, add one target per version and use a job matrix. Each version then gets a fresh runner and a clean cluster.
 
+A failed scheduled run is easy to miss. To track failing guides as issues in your repository, set `open-issues` and give the job permission to write issues:
+
+```yaml
+permissions:
+  contents: read
+  issues: write
+
+steps:
+  - uses: reem-sab/install-sentinel@v0
+    with:
+      mode: run
+      config: sentinel.yml
+      open-issues: ${{ github.event_name == 'schedule' }}
+```
+
+Each failing target gets one issue with the heading, file, line, and last output of the step that broke. A later failure updates the same issue. When the target passes again, the run comments on the issue and closes it.
+
 ## Run it on your machine
 
 ```bash

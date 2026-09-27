@@ -9,6 +9,8 @@ on:
 
 permissions:
   contents: read
+  # Scheduled runs open an issue for a failing guide and close it when the guide passes again.
+  issues: write
 
 jobs:
   guide:
@@ -47,6 +49,7 @@ jobs:
           mode: run
           config: examples/camunda/sentinel.yml
           target: ${{ matrix.target }}
+          open-issues: ${{ github.event_name == 'schedule' }}
 
       - name: Show pods on failure
         if: failure()

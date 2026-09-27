@@ -13762,22 +13762,7 @@ function renderRunReport(results) {
     out.push(`| ${r.target.name} | ${r.passed ? "Passed" : "Failed"} | ${ran} | ${failedAt} |`);
   }
   for (const r of results.filter((x) => !x.passed)) {
-    out.push("", `### ${r.target.name}`, "");
-    const f = r.failedStep;
-    if (f) {
-      const b = f.step.block;
-      out.push(`The guide broke at **${b.headings.join(" > ") || "(no heading)"}**.`, "");
-      out.push(`- File: \`${rel(b.file)}\`, line ${b.line}`);
-      if (f.outcome) {
-        out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
-        out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
-      } else if (f.error) {
-        out.push(`- Could not start: ${f.error}`);
-      }
-    }
-    for (const a of r.assertions.filter((x) => !x.passed)) {
-      out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
-    }
+    out.push("", `### ${r.target.name}`, "", ...renderFailure(r));
   }
   const versions = results.flatMap((r) => r.environment.map((v) => ({ r, v })));
   if (versions.length) {
@@ -13798,6 +13783,25 @@ function renderRunReport(results) {
     out.push("", "</details>");
   }
   return out.join("\n");
+}
+function renderFailure(r) {
+  const out = [];
+  const f = r.failedStep;
+  if (f) {
+    const b = f.step.block;
+    out.push(`The guide broke at **${b.headings.join(" > ") || "(no heading)"}**.`, "");
+    out.push(`- File: \`${rel(b.file)}\`, line ${b.line}`);
+    if (f.outcome) {
+      out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
+      out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
+    } else if (f.error) {
+      out.push(`- Could not start: ${f.error}`);
+    }
+  }
+  for (const a of r.assertions.filter((x) => !x.passed)) {
+    out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
+  }
+  return out;
 }
 function renderPlan(targetName, steps, prerequisites) {
   const out = [`Plan for ${targetName}`, ""];

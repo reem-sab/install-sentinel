@@ -19,22 +19,7 @@ export function renderRunReport(results: TargetResult[]): string {
   }
 
   for (const r of results.filter((x) => !x.passed)) {
-    out.push("", `### ${r.target.name}`, "");
-    const f = r.failedStep;
-    if (f) {
-      const b = f.step.block;
-      out.push(`The guide broke at **${b.headings.join(" > ") || "(no heading)"}**.`, "");
-      out.push(`- File: \`${rel(b.file)}\`, line ${b.line}`);
-      if (f.outcome) {
-        out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
-        out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
-      } else if (f.error) {
-        out.push(`- Could not start: ${f.error}`);
-      }
-    }
-    for (const a of r.assertions.filter((x) => !x.passed)) {
-      out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
-    }
+    out.push("", `### ${r.target.name}`, "", ...renderFailure(r));
   }
 
   const versions = results.flatMap((r) => r.environment.map((v) => ({ r, v })));
@@ -58,6 +43,27 @@ export function renderRunReport(results: TargetResult[]): string {
     out.push("", "</details>");
   }
   return out.join("\n");
+}
+
+/** Where a failed target broke and what it printed. Shared by the report and the tracking issue. */
+export function renderFailure(r: TargetResult): string[] {
+  const out: string[] = [];
+  const f = r.failedStep;
+  if (f) {
+    const b = f.step.block;
+    out.push(`The guide broke at **${b.headings.join(" > ") || "(no heading)"}**.`, "");
+    out.push(`- File: \`${rel(b.file)}\`, line ${b.line}`);
+    if (f.outcome) {
+      out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
+      out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
+    } else if (f.error) {
+      out.push(`- Could not start: ${f.error}`);
+    }
+  }
+  for (const a of r.assertions.filter((x) => !x.passed)) {
+    out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
+  }
+  return out;
 }
 
 export function renderPlan(targetName: string, steps: PlannedStep[], prerequisites?: PrerequisiteReport): string {

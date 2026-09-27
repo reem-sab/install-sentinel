@@ -33322,22 +33322,7 @@ function renderRunReport(results) {
     out.push(`| ${r.target.name} | ${r.passed ? "Passed" : "Failed"} | ${ran} | ${failedAt} |`);
   }
   for (const r of results.filter((x) => !x.passed)) {
-    out.push("", `### ${r.target.name}`, "");
-    const f = r.failedStep;
-    if (f) {
-      const b = f.step.block;
-      out.push(`The guide broke at **${b.headings.join(" > ") || "(no heading)"}**.`, "");
-      out.push(`- File: \`${rel(b.file)}\`, line ${b.line}`);
-      if (f.outcome) {
-        out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
-        out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
-      } else if (f.error) {
-        out.push(`- Could not start: ${f.error}`);
-      }
-    }
-    for (const a of r.assertions.filter((x) => !x.passed)) {
-      out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
-    }
+    out.push("", `### ${r.target.name}`, "", ...renderFailure(r));
   }
   const versions = results.flatMap((r) => r.environment.map((v) => ({ r, v })));
   if (versions.length) {
@@ -33359,6 +33344,25 @@ function renderRunReport(results) {
   }
   return out.join("\n");
 }
+function renderFailure(r) {
+  const out = [];
+  const f = r.failedStep;
+  if (f) {
+    const b = f.step.block;
+    out.push(`The guide broke at **${b.headings.join(" > ") || "(no heading)"}**.`, "");
+    out.push(`- File: \`${rel(b.file)}\`, line ${b.line}`);
+    if (f.outcome) {
+      out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
+      out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
+    } else if (f.error) {
+      out.push(`- Could not start: ${f.error}`);
+    }
+  }
+  for (const a of r.assertions.filter((x) => !x.passed)) {
+    out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
+  }
+  return out;
+}
 function describeMissing(report, m) {
   const where = report.section ? `the "${report.section}" section does not mention it` : "the guide has no prerequisites section";
   return `\`${m.command}\` is used at ${rel(m.file)}:${m.line}, but ${where}.`;
@@ -33375,6 +33379,42 @@ function renderFindings(findings, filesChecked) {
     for (const f of findings) out.push(`| \`${rel(f.file)}\` | ${f.line} | ${f.rule} | ${f.message} |`);
   }
   return out.join("\n");
+}
+
+// src/issues.ts
+var marker = (target) => `<!-- install-sentinel target=${target} -->`;
+function decide(result, open2, runUrl) {
+  const name = result.target.name;
+  const existing = open2.find((i) => i.body?.includes(marker(name)));
+  if (result.passed) {
+    if (!existing) return { action: "none" };
+    return { action: "close", number: existing.number, comment: `The guide for **${name}** passes again in [this run](${runUrl}).` };
+  }
+  const body = [marker(name), `The documented install path for **${name}** failed in [this run](${runUrl}).`, "", ...renderFailure(result)].join("\n");
+  if (existing) return { action: "update", number: existing.number, body };
+  return { action: "open", title: `Install guide fails: ${name}`, body };
+}
+async function syncIssues(results, options, fetchImpl = fetch) {
+  const call = async (method, route, body) => {
+    const response = await fetchImpl(`${options.apiUrl ?? "https://api.github.com"}/repos/${options.repository}${route}`, {
+      method,
+      headers: { authorization: `Bearer ${options.token}`, accept: "application/vnd.github+json" },
+      body: body && JSON.stringify(body)
+    });
+    if (!response.ok) throw new Error(`GitHub API ${method} ${route} returned HTTP ${response.status}.`);
+    return response.json();
+  };
+  const open2 = await call("GET", "/issues?state=open&per_page=100");
+  const decisions = results.map((r) => decide(r, open2, options.runUrl));
+  for (const d of decisions) {
+    if (d.action === "open") await call("POST", "/issues", { title: d.title, body: d.body });
+    if (d.action === "update") await call("PATCH", `/issues/${d.number}`, { body: d.body });
+    if (d.action === "close") {
+      await call("POST", `/issues/${d.number}/comments`, { body: d.comment });
+      await call("PATCH", `/issues/${d.number}`, { state: "closed", state_reason: "completed" });
+    }
+  }
+  return decisions;
 }
 
 // src/main.ts
@@ -33436,6 +33476,18 @@ async function run() {
     }
   }
   await summary.addRaw(renderRunReport(results)).write();
+  if (getBooleanInput("open-issues")) {
+    const repository = process.env.GITHUB_REPOSITORY ?? "";
+    const runUrl = `${process.env.GITHUB_SERVER_URL}/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+    const token = getInput("github-token", { required: true });
+    try {
+      for (const d of await syncIssues(results, { token, repository, runUrl, apiUrl: process.env.GITHUB_API_URL })) {
+        if (d.action !== "none") info(`Tracking issue: ${d.action}${"number" in d ? ` #${d.number}` : ""}`);
+      }
+    } catch (error2) {
+      warning(`Could not update tracking issues: ${error2.message}`);
+    }
+  }
   const firstFailure = results.find((r) => !r.passed);
   setOutput("result", firstFailure ? "failed" : "passed");
   setOutput("failed-step", firstFailure?.failedStep ? describeStep(firstFailure.failedStep.step) : "");

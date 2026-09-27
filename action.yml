@@ -31,6 +31,14 @@ inputs:
   target:
     description: "run: name of one target in the manifest. Empty runs every target."
     required: false
+  open-issues:
+    description: "run: open or update one issue in this repository for each failing target, and close it when the target passes again. Needs issues: write."
+    required: false
+    default: "false"
+  github-token:
+    description: "run: token for open-issues."
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   result:

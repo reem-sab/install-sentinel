@@ -40,6 +40,10 @@ A collapsed block is usually the source of a script the previous step already ra
 
 A full YAML parse sounds like the obvious check. Run across 1,121 Camunda Self-Managed pages, it reported 162 parse errors, and on reading them, most were written that way on purpose: `...` elisions, either/or alternatives in one block, "invalid example" snippets, and requests for other tools shown in a YAML block. A check that cries wolf gets turned off. The default rules fire only on mistakes that are never intentional. On the same 1,121 pages, they returned 16 findings, and every one was a real copy-and-paste failure.
 
+## Failing guides become issues
+
+A scheduled run that fails turns one job red, and nobody looks at scheduled jobs until something else breaks. With `open-issues`, a failed target opens an issue in the same repository, holding the heading, file, line, and last output of the step that broke. A hidden marker in the issue body names the target, so the next run finds the same issue: another failure updates it, and a pass comments and closes it. There is never more than one open issue per target. The calls go straight to the GitHub REST API with the job's token, so the feature adds no dependency. This repository turns it on for scheduled runs only, so a pull request run never opens an issue.
+
 ## What it deliberately does not do
 
 - It does not fix anything. It reports, with the file and line, and a writer decides.
