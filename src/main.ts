@@ -3,6 +3,7 @@
 
 import * as core from "@actions/core";
 import path from "node:path";
+import { changedFiles, pullRequestBase } from "./changed.js";
 import { validatePaths } from "./commands.js";
 import { loadManifest } from "./manifest.js";
 import { describeMissing, renderFindings, renderRunReport } from "./report.js";
@@ -13,7 +14,13 @@ const rel = (file: string) => path.relative(process.env.GITHUB_WORKSPACE ?? proc
 async function validate(): Promise<void> {
   const patterns = core.getMultilineInput("paths", { required: true });
   const failOn = core.getInput("fail-on") || "error";
-  const { files, findings } = await validatePaths(patterns, { strict: core.getBooleanInput("strict") });
+  let changed: string[] | undefined;
+  if (core.getBooleanInput("changed-only")) {
+    const base = pullRequestBase();
+    if (base) changed = changedFiles(base);
+    else core.info("changed-only applies to pull_request events, so every file that matches paths is checked.");
+  }
+  const { files, findings } = await validatePaths(patterns, { strict: core.getBooleanInput("strict") }, changed);
 
   for (const f of findings) {
     const props = { file: rel(f.file), startLine: f.line, title: `Install Sentinel: ${f.rule}` };

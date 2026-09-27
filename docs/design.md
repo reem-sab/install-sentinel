@@ -20,6 +20,10 @@ A reader runs the whole guide in one terminal. A `cd` in the download step still
 
 Some docs sites show a script from another repository instead of pasting commands. The block holds a GitHub link, and the site renders the file behind it. Install Sentinel fetches the same file, at the same branch and line range, so it runs what the reader sees. Release branches with a slash in the name, such as `stable/8.9`, resolve correctly.
 
+## Pull requests check only what they change
+
+A pull request that edits one page should get findings about that page. On a docs site with a thousand pages, findings from pages the author never touched bury the one that matters, and a writer learns to ignore the check. With `changed-only`, validate asks git which files changed since the pull request's base commit and checks only the ones that match `paths`. The base commit comes from the pull request event, so the checkout needs the full history to diff against. On a push or a scheduled run, every matching file is checked.
+
 ## Prerequisites a guide forgets to list
 
 A reader installs what the prerequisites section lists, then starts. If a step uses a tool the list never mentions, the reader finds out halfway through, with a cluster half built. Before anything runs, Install Sentinel takes the first word of each command in the steps it will run, including commands in fetched reference scripts, and compares them with the words under the first heading that contains "prerequisite." Each tool the section never mentions becomes a warning at the step that first uses it.

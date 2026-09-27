@@ -1,8 +1,9 @@
 // Command line entry point, for running the same checks on your own machine.
 //
-//   install-sentinel validate "docs/**/*.md" [--strict]
+//   install-sentinel validate "docs/**/*.md" [--strict] [--changed-since <ref>]
 //   install-sentinel run --config sentinel.yml [--target name] [--dry-run]
 
+import { changedFiles } from "./changed.js";
 import { validatePaths } from "./commands.js";
 import { loadManifest } from "./manifest.js";
 import { checkPrerequisites } from "./prerequisites.js";
@@ -10,7 +11,7 @@ import { renderFindings, renderPlan, renderRunReport } from "./report.js";
 import { describeStep, plan, runTarget } from "./run.js";
 
 const USAGE = `Usage:
-  install-sentinel validate <glob> [<glob> ...] [--strict]
+  install-sentinel validate <glob> [<glob> ...] [--strict] [--changed-since <ref>]
   install-sentinel run --config <file> [--target <name>] [--dry-run]`;
 
 async function main(argv: string[]): Promise<number> {
@@ -21,9 +22,11 @@ async function main(argv: string[]): Promise<number> {
   };
 
   if (command === "validate") {
-    const patterns = rest.filter((a) => !a.startsWith("--"));
+    const since = flag("changed-since");
+    const patterns = rest.filter((a) => !a.startsWith("--") && a !== since);
     if (!patterns.length) return usage();
-    const { files, findings } = await validatePaths(patterns, { strict: rest.includes("--strict") });
+    const changed = since ? changedFiles(since) : undefined;
+    const { files, findings } = await validatePaths(patterns, { strict: rest.includes("--strict") }, changed);
     console.log(renderFindings(findings, files.length));
     return findings.some((f) => f.severity === "error") ? 1 : 0;
   }

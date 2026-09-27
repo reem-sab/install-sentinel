@@ -41,6 +41,21 @@ Check the docs in your repository on every pull request:
 
 A finding appears as an annotation on the exact line of the docs file, in the pull request diff.
 
+On a large docs site, check only the pages a pull request changed. Set `changed-only: true`, and check out the full history, so the pull request's base commit is there to compare against:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0
+- uses: reem-sab/install-sentinel@v0
+  with:
+    mode: validate
+    changed-only: true
+    paths: docs/**/*.md
+```
+
+Outside a pull request, `changed-only` has no effect, and every file that matches `paths` is checked.
+
 To run a guide, write a manifest:
 
 ```yaml
@@ -78,6 +93,9 @@ npm run build
 
 # Check code blocks
 node dist/cli.js validate "docs/**/*.md"
+
+# Check only the pages that changed since main
+node dist/cli.js validate "docs/**/*.md" --changed-since main
 
 # See which blocks a guide run would execute, without running anything
 node dist/cli.js run --config examples/podinfo/sentinel.yml --dry-run

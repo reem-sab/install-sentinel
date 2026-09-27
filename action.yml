@@ -17,6 +17,10 @@ inputs:
     description: "validate: also parse every YAML block. Expect intentional fragments to show up."
     required: false
     default: "false"
+  changed-only:
+    description: "validate: on a pull request, check only the Markdown and MDX files it changed. Needs actions/checkout with fetch-depth: 0."
+    required: false
+    default: "false"
   fail-on:
     description: "validate: fail the job on error, on warning, or never."
     required: false
