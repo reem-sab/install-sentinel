@@ -2,6 +2,16 @@
 
 Install guides break without anyone touching them. A chart moves, a flag is renamed, a script changes on its release branch, and the guide still reads fine. Prose linting does not catch this, and neither does comparing docs to source. Only running the guide does.
 
+```mermaid
+flowchart LR
+    A["Install guide<br/>(Markdown or MDX)"] --> B["Read in reading order<br/>(partials, reference blocks)"]
+    B --> C["Plan the steps<br/>(sections, skips)"]
+    C --> D["Run on a Kubernetes<br/>cluster in CI"]
+    D --> E["Check the promised<br/>end state"]
+    E --> F["Report the heading and line<br/>that stopped, then clean up"]
+    F -.-> G["Weekly runs: open or close<br/>one tracking issue per guide"]
+```
+
 Install Sentinel runs the install path a guide documents, in CI, the way a reader would. When a step fails, it tells you which heading and which line of the page broke.
 
 It is the companion to [Doc Sentinel AI](https://github.com/reem-sab/doc-sentinel-ai). Doc Sentinel asks whether the docs still match the code. Install Sentinel asks whether the documented path still works when you run it.
