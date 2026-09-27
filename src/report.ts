@@ -3,6 +3,7 @@
 // is what a writer needs to fix it.
 
 import path from "node:path";
+import type { PrerequisiteReport, ToolUse } from "./prerequisites.js";
 import type { PlannedStep, TargetResult } from "./run.js";
 import { describeStep } from "./run.js";
 import type { Finding } from "./validate.js";
@@ -36,6 +37,20 @@ export function renderRunReport(results: TargetResult[]): string {
     }
   }
 
+  const versions = results.flatMap((r) => r.environment.map((v) => ({ r, v })));
+  if (versions.length) {
+    out.push("", "### Environment", "", "Tool versions before the first step ran.", "", "| Target | Tool | Version |", "| --- | --- | --- |");
+    for (const { r, v } of versions) out.push(`| ${r.target.name} | ${v.tool} | ${v.version} |`);
+  }
+
+  const warnings = results.filter((r) => r.prerequisites.missing.length);
+  if (warnings.length) {
+    out.push("", "### Prerequisites", "");
+    for (const r of warnings) {
+      for (const m of r.prerequisites.missing) out.push(`- ${r.target.name}: ${describeMissing(r.prerequisites, m)}`);
+    }
+  }
+
   const skipped = results.flatMap((r) => r.steps.filter((s) => s.status === "skipped").map((s) => ({ r, s })));
   if (skipped.length) {
     out.push("", "<details><summary>Skipped blocks</summary>", "");
@@ -45,7 +60,7 @@ export function renderRunReport(results: TargetResult[]): string {
   return out.join("\n");
 }
 
-export function renderPlan(targetName: string, steps: PlannedStep[]): string {
+export function renderPlan(targetName: string, steps: PlannedStep[], prerequisites?: PrerequisiteReport): string {
   const out = [`Plan for ${targetName}`, ""];
   let n = 0;
   for (const s of steps) {
@@ -54,7 +69,14 @@ export function renderPlan(targetName: string, steps: PlannedStep[]): string {
     out.push(`${label} ${rel(s.block.file)}:${s.block.line}  ${s.block.headings.join(" > ")}${reason}`);
     if (!s.skipReason) out.push(`        ${preview(s.block.content)}`);
   }
+  for (const m of prerequisites?.missing ?? []) out.push(`  warn ${describeMissing(prerequisites!, m)}`);
   return out.join("\n");
+}
+
+/** One line a writer can act on: which tool, where it is first used, and what the guide says about it. */
+export function describeMissing(report: PrerequisiteReport, m: ToolUse): string {
+  const where = report.section ? `the "${report.section}" section does not mention it` : "the guide has no prerequisites section";
+  return `\`${m.command}\` is used at ${rel(m.file)}:${m.line}, but ${where}.`;
 }
 
 export function renderFindings(findings: Finding[], filesChecked: number): string {

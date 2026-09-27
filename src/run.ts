@@ -3,6 +3,7 @@
 
 import { extractFile, type CodeBlock } from "./extract.js";
 import type { Assertion, Target } from "./manifest.js";
+import { checkPrerequisites, VERSION_COMMANDS, type PrerequisiteReport, type ToolUse } from "./prerequisites.js";
 import { isReference, resolveContent } from "./references.js";
 import { ShellSession, toCommands, type StepOutcome } from "./session.js";
 
@@ -32,9 +33,17 @@ export interface AssertionResult {
   outputTail: string[];
 }
 
+export interface ToolVersion {
+  tool: string;
+  version: string;
+}
+
 export interface TargetResult {
   target: Target;
   passed: boolean;
+  prerequisites: PrerequisiteReport;
+  /** Versions of the tools the guide uses, recorded before the first step. */
+  environment: ToolVersion[];
   steps: StepResult[];
   assertions: AssertionResult[];
   teardown: StepResult[];
@@ -74,6 +83,8 @@ export async function runTarget(target: Target, hooks: RunHooks = {}): Promise<T
   const planned = plan(target);
   const session = new ShellSession(undefined, { ...process.env, ...target.env });
   const timeoutMs = target.stepTimeoutMinutes * 60_000;
+  const prerequisites = await checkPrerequisites(target, planned);
+  const environment = await recordVersions(session, prerequisites.tools);
 
   const steps: StepResult[] = [];
   let failed: StepResult | undefined;
@@ -108,6 +119,8 @@ export async function runTarget(target: Target, hooks: RunHooks = {}): Promise<T
   return {
     target,
     passed: !failed && assertions.every((a) => a.passed),
+    prerequisites,
+    environment,
     steps,
     assertions,
     teardown,
@@ -130,6 +143,19 @@ async function execute(
   }
   const outcome = await session.run(toCommands(content, target.substitutions), { timeoutMs, onOutput: hooks.onOutput });
   return { step, outcome, status: outcome.exitCode === 0 ? "passed" : "failed" };
+}
+
+// A step that fails on one runner and passes on another often differs only in a
+// tool version, so the report shows what this run had.
+async function recordVersions(session: ShellSession, tools: ToolUse[]): Promise<ToolVersion[]> {
+  const versions: ToolVersion[] = [];
+  for (const { command } of tools) {
+    const ask = VERSION_COMMANDS[command];
+    if (!ask) continue;
+    const outcome = await session.run(ask, { timeoutMs: 30_000 });
+    versions.push({ tool: command, version: outcome.exitCode === 0 ? (outcome.outputTail[0] ?? "").trim() : "not found" });
+  }
+  return versions;
 }
 
 async function check(session: ShellSession, assertion: Assertion, timeoutMs: number): Promise<AssertionResult> {

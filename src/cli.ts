@@ -5,6 +5,7 @@
 
 import { validatePaths } from "./commands.js";
 import { loadManifest } from "./manifest.js";
+import { checkPrerequisites } from "./prerequisites.js";
 import { renderFindings, renderPlan, renderRunReport } from "./report.js";
 import { describeStep, plan, runTarget } from "./run.js";
 
@@ -35,7 +36,10 @@ async function main(argv: string[]): Promise<number> {
     if (!targets.length) throw new Error(`No target named "${only}" in ${config}.`);
 
     if (rest.includes("--dry-run")) {
-      for (const t of targets) console.log(renderPlan(t.name, plan(t)) + "\n");
+      for (const t of targets) {
+        const steps = plan(t);
+        console.log(renderPlan(t.name, steps, await checkPrerequisites(t, steps)) + "\n");
+      }
       return 0;
     }
 

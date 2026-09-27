@@ -20,6 +20,14 @@ A reader runs the whole guide in one terminal. A `cd` in the download step still
 
 Some docs sites show a script from another repository instead of pasting commands. The block holds a GitHub link, and the site renders the file behind it. Install Sentinel fetches the same file, at the same branch and line range, so it runs what the reader sees. Release branches with a slash in the name, such as `stable/8.9`, resolve correctly.
 
+## Prerequisites a guide forgets to list
+
+A reader installs what the prerequisites section lists, then starts. If a step uses a tool the list never mentions, the reader finds out halfway through, with a cluster half built. Before anything runs, Install Sentinel takes the first word of each command in the steps it will run, including commands in fetched reference scripts, and compares them with the words under the first heading that contains "prerequisite." Each tool the section never mentions becomes a warning at the step that first uses it.
+
+Shell keywords, built-ins, and standard tools such as `grep`, `curl`, and `git` are ignored, because no guide lists them. Comments, arguments on continued lines, heredoc content, and a script's own functions are ignored too. The check is a heuristic, so it warns and never fails a run. It also works in a dry run, so you can see the warnings without a cluster.
+
+The run also records the version of Helm, kubectl, kind, and Docker before the first step, for each of those tools the guide uses. A step that passes on one runner and fails on another often differs only in a tool version, and the report's "Environment" section shows which one this run had.
+
 ## Blocks inside `<details>` do not run
 
 A collapsed block is usually the source of a script the previous step already ran, shown for reading. Running it would repeat the step. You can turn this on per target with `runDetails`.

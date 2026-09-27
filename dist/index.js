@@ -32946,6 +32946,9 @@ function stringMap(value, where) {
 // src/report.ts
 import path4 from "node:path";
 
+// src/prerequisites.ts
+import { readFileSync as readFileSync3 } from "node:fs";
+
 // src/session.ts
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -33035,6 +33038,156 @@ function toCommands(content, substitutions = {}) {
   return script;
 }
 
+// src/prerequisites.ts
+var SHELL_WORDS = /* @__PURE__ */ new Set([
+  "cd",
+  "export",
+  "echo",
+  "if",
+  "then",
+  "else",
+  "elif",
+  "fi",
+  "for",
+  "while",
+  "until",
+  "do",
+  "done",
+  "case",
+  "esac",
+  "function",
+  "return",
+  "exit",
+  "local",
+  "set",
+  "unset",
+  "source",
+  "read",
+  "shift",
+  "trap",
+  "eval",
+  "exec",
+  "printf",
+  "true",
+  "false",
+  "test",
+  "wait",
+  "break",
+  "continue",
+  "declare"
+]);
+var STANDARD_TOOLS = /* @__PURE__ */ new Set([
+  "ls",
+  "cat",
+  "grep",
+  "sed",
+  "awk",
+  "mkdir",
+  "rm",
+  "cp",
+  "mv",
+  "touch",
+  "chmod",
+  "curl",
+  "wget",
+  "git",
+  "bash",
+  "sh",
+  "head",
+  "tail",
+  "sort",
+  "uniq",
+  "wc",
+  "tr",
+  "cut",
+  "tee",
+  "xargs",
+  "find",
+  "sleep",
+  "pwd",
+  "env",
+  "which",
+  "command",
+  "sudo",
+  "tar",
+  "base64",
+  "date",
+  "basename",
+  "dirname"
+]);
+var VERSION_COMMANDS = {
+  helm: "helm version --short",
+  kubectl: "kubectl version --client",
+  kind: "kind version",
+  docker: "docker --version"
+};
+async function checkPrerequisites(target, steps) {
+  const tools = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const step of steps.filter((s) => !s.skipReason)) {
+    let content;
+    try {
+      content = await resolveContent(step.block);
+    } catch {
+      continue;
+    }
+    for (const command of commandsIn(toCommands(content, target.substitutions))) {
+      if (seen.has(command)) continue;
+      seen.add(command);
+      tools.push({ command, file: step.block.file, line: step.block.line });
+    }
+  }
+  const section = findPrerequisites(target.guide);
+  const missing = tools.filter((t) => !STANDARD_TOOLS.has(t.command) && !section?.words.has(t.command.toLowerCase()));
+  return { tools, missing, section: section?.heading };
+}
+function commandsIn(script) {
+  const found = [];
+  const defined = /* @__PURE__ */ new Set();
+  let heredocEnd;
+  let continued = false;
+  for (const raw of script.split("\n")) {
+    const line = raw.trim();
+    if (heredocEnd) {
+      if (line === heredocEnd) heredocEnd = void 0;
+      continue;
+    }
+    const isArguments = continued;
+    continued = line.endsWith("\\");
+    heredocEnd = /<<-?\s*['"]?(\w+)['"]?/.exec(line)?.[1];
+    if (isArguments || !line || line.startsWith("#")) continue;
+    const fn = /^(?:function\s+)?([\w-]+)\s*\(\)/.exec(line);
+    if (fn) defined.add(fn[1]);
+    for (const part of line.split(/&&|\|\||[|;]/)) {
+      const words = part.trim().split(/\s+/);
+      let i = 0;
+      while (/^\w+=/.test(words[i] ?? "")) i++;
+      const name = words[i] ?? "";
+      if (/^[a-z][\w.+-]*$/i.test(name) && !SHELL_WORDS.has(name)) found.push(name);
+    }
+  }
+  return found.filter((name) => !defined.has(name));
+}
+function findPrerequisites(guide) {
+  const lines = readFileSync3(guide, "utf8").split(/\r?\n/);
+  let inFence = false;
+  let level = 0;
+  let heading = "";
+  const words = /* @__PURE__ */ new Set();
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
+    const h = inFence ? null : /^(#{1,6})\s+(.+)$/.exec(line);
+    if (h && level && h[1].length <= level) break;
+    if (h && !level && /prerequisite/i.test(h[2])) {
+      level = h[1].length;
+      heading = h[2].trim();
+      continue;
+    }
+    if (level) for (const w of line.toLowerCase().match(/[a-z0-9][\w.+-]*/g) ?? []) words.add(w.replace(/\.+$/, ""));
+  }
+  return level ? { heading, words } : void 0;
+}
+
 // src/run.ts
 var SHELL_LANGS = /* @__PURE__ */ new Set(["bash", "sh", "shell", "console", "zsh"]);
 function plan(target) {
@@ -33059,6 +33212,8 @@ async function runTarget(target, hooks = {}) {
   const planned = plan(target);
   const session = new ShellSession(void 0, { ...process.env, ...target.env });
   const timeoutMs = target.stepTimeoutMinutes * 6e4;
+  const prerequisites = await checkPrerequisites(target, planned);
+  const environment = await recordVersions(session, prerequisites.tools);
   const steps = [];
   let failed;
   for (const [index, step] of planned.filter((s) => s.role === "step").entries()) {
@@ -33087,6 +33242,8 @@ async function runTarget(target, hooks = {}) {
   return {
     target,
     passed: !failed && assertions.every((a) => a.passed),
+    prerequisites,
+    environment,
     steps,
     assertions,
     teardown,
@@ -33102,6 +33259,16 @@ async function execute(session, step, target, timeoutMs, hooks) {
   }
   const outcome = await session.run(toCommands(content, target.substitutions), { timeoutMs, onOutput: hooks.onOutput });
   return { step, outcome, status: outcome.exitCode === 0 ? "passed" : "failed" };
+}
+async function recordVersions(session, tools) {
+  const versions = [];
+  for (const { command } of tools) {
+    const ask = VERSION_COMMANDS[command];
+    if (!ask) continue;
+    const outcome = await session.run(ask, { timeoutMs: 3e4 });
+    versions.push({ tool: command, version: outcome.exitCode === 0 ? (outcome.outputTail[0] ?? "").trim() : "not found" });
+  }
+  return versions;
 }
 async function check(session, assertion, timeoutMs) {
   let last;
@@ -33149,6 +33316,18 @@ function renderRunReport(results) {
       out.push("", `End state check **${a.assertion.name}** failed after ${a.attempts} attempts.`, "", "```text", ...a.outputTail, "```");
     }
   }
+  const versions = results.flatMap((r) => r.environment.map((v) => ({ r, v })));
+  if (versions.length) {
+    out.push("", "### Environment", "", "Tool versions before the first step ran.", "", "| Target | Tool | Version |", "| --- | --- | --- |");
+    for (const { r, v } of versions) out.push(`| ${r.target.name} | ${v.tool} | ${v.version} |`);
+  }
+  const warnings = results.filter((r) => r.prerequisites.missing.length);
+  if (warnings.length) {
+    out.push("", "### Prerequisites", "");
+    for (const r of warnings) {
+      for (const m of r.prerequisites.missing) out.push(`- ${r.target.name}: ${describeMissing(r.prerequisites, m)}`);
+    }
+  }
   const skipped = results.flatMap((r) => r.steps.filter((s) => s.status === "skipped").map((s) => ({ r, s })));
   if (skipped.length) {
     out.push("", "<details><summary>Skipped blocks</summary>", "");
@@ -33156,6 +33335,10 @@ function renderRunReport(results) {
     out.push("", "</details>");
   }
   return out.join("\n");
+}
+function describeMissing(report, m) {
+  const where = report.section ? `the "${report.section}" section does not mention it` : "the guide has no prerequisites section";
+  return `\`${m.command}\` is used at ${rel(m.file)}:${m.line}, but ${where}.`;
 }
 function renderFindings(findings, filesChecked) {
   const errors = findings.filter((f) => f.severity === "error").length;
@@ -33207,6 +33390,13 @@ async function run() {
     });
     if (open2) endGroup();
     results.push(result);
+    for (const m of result.prerequisites.missing) {
+      warning(describeMissing(result.prerequisites, m), {
+        file: rel2(m.file),
+        startLine: m.line,
+        title: "Install Sentinel: tool not in prerequisites"
+      });
+    }
     const failed = result.failedStep;
     if (failed) {
       error(`This step failed when run in CI (${target.name}). See the job summary for output.`, {

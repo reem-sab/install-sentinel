@@ -21,9 +21,10 @@ Install Sentinel has two modes.
 1. Reads the guide in reading order, including imported partials, which render in place
 2. Selects the blocks a reader runs, based on the sections you choose
 3. Fetches `reference` blocks, which hold a GitHub link instead of the commands
-4. Runs each block in order, carrying the working directory and exported variables from one step to the next, as one terminal session would
-5. Checks the end state the guide promises
-6. Runs the guide's cleanup steps, even after a failure
+4. Warns about tools the steps use that the guide's prerequisites section never mentions, and records the versions of Helm, kubectl, kind, and Docker under "Environment" in the report
+5. Runs each block in order, carrying the working directory and exported variables from one step to the next, as one terminal session would
+6. Checks the end state the guide promises
+7. Runs the guide's cleanup steps, even after a failure
 
 ## Quick start
 
@@ -85,7 +86,7 @@ node dist/cli.js run --config examples/podinfo/sentinel.yml --dry-run
 node dist/cli.js run --config examples/podinfo/sentinel.yml --target podinfo-next
 ```
 
-Start with `--dry-run`. The plan shows every block, whether it runs, and why a block is skipped.
+Start with `--dry-run`. The plan shows every block, whether it runs, and why a block is skipped. It also lists any tool a step uses that the prerequisites section does not mention, so you can fix the list before you need a cluster.
 
 ## Manifest reference
 

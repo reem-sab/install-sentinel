@@ -5,7 +5,7 @@ import * as core from "@actions/core";
 import path from "node:path";
 import { validatePaths } from "./commands.js";
 import { loadManifest } from "./manifest.js";
-import { renderFindings, renderRunReport } from "./report.js";
+import { describeMissing, renderFindings, renderRunReport } from "./report.js";
 import { describeStep, runTarget } from "./run.js";
 
 const rel = (file: string) => path.relative(process.env.GITHUB_WORKSPACE ?? process.cwd(), file);
@@ -49,6 +49,14 @@ async function run(): Promise<void> {
     });
     if (open) core.endGroup();
     results.push(result);
+
+    for (const m of result.prerequisites.missing) {
+      core.warning(describeMissing(result.prerequisites, m), {
+        file: rel(m.file),
+        startLine: m.line,
+        title: "Install Sentinel: tool not in prerequisites",
+      });
+    }
 
     const failed = result.failedStep;
     if (failed) {
