@@ -30,6 +30,8 @@ export interface Target {
   substitutions: Record<string, string>;
   stepTimeoutMinutes: number;
   assertions: Assertion[];
+  /** Track this target in an issue when open-issues is on. On by default. */
+  openIssues: boolean;
 }
 
 export interface Manifest {
@@ -77,6 +79,7 @@ function toTarget(raw: Raw, baseDir: string, where: string): Target {
       retries: typeof a.retries === "number" ? a.retries : 0,
       intervalSeconds: typeof a.intervalSeconds === "number" ? a.intervalSeconds : 5,
     })),
+    openIssues: raw.openIssues !== false,
   };
 }
 

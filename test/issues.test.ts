@@ -3,10 +3,10 @@ import { marker, syncIssues, type Issue } from "../src/issues.js";
 import type { Target } from "../src/manifest.js";
 import type { TargetResult } from "../src/run.js";
 
-const target = { name: "demo", guide: "docs/install.md" } as Target;
+const target = { name: "demo", guide: "docs/install.md", openIssues: true } as Target;
 
-const result = (passed: boolean): TargetResult => ({
-  target,
+const result = (passed: boolean, openIssues = true): TargetResult => ({
+  target: { ...target, openIssues },
   passed,
   prerequisites: { tools: [], missing: [] },
   environment: [],
@@ -63,6 +63,12 @@ describe("syncIssues", () => {
       expect.objectContaining({ method: "POST", route: "/issues/7/comments" }),
       expect.objectContaining({ method: "PATCH", route: "/issues/7", body: { state: "closed", state_reason: "completed" } }),
     ]);
+  });
+
+  it("leaves a target that opts out alone, even when it fails", async () => {
+    const { decisions, writes } = await sync([result(false, false)], [{ number: 7, body: marker("demo") }]);
+    expect(decisions).toEqual([{ action: "none" }]);
+    expect(writes).toEqual([]);
   });
 
   it("does nothing for a passing target with no open issue, or an issue for another target", async () => {

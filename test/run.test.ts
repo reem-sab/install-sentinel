@@ -9,7 +9,7 @@ const guide = new URL("./fixtures/session-guide.md", import.meta.url).pathname;
 
 const target = (overrides: Partial<Target> = {}): Target => ({
   name: "fixture", guide, sections: [], teardown: ["Clean up"], skip: [], runDetails: false,
-  env: {}, substitutions: {}, stepTimeoutMinutes: 1, assertions: [], ...overrides,
+  env: {}, substitutions: {}, stepTimeoutMinutes: 1, assertions: [], openIssues: true, ...overrides,
 });
 
 describe("ShellSession", () => {

@@ -139,6 +139,7 @@ Start with `--dry-run`. The plan shows every block, whether it runs, and why a b
 | `substitutions` | Text to replace in commands, for placeholders like `<your-namespace>`. |
 | `stepTimeoutMinutes` | Time limit for each step. Default 20. |
 | `assertions` | End-state checks. Each has `name`, `run`, and optional `expect`, `retries`, and `intervalSeconds`. |
+| `openIssues` | Track the target in an issue when the `open-issues` input is on. Default `true`. Set `false` for a target you expect to stop for a known reason. |
 
 ## Examples
 

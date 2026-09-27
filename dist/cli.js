@@ -13388,7 +13388,8 @@ function toTarget(raw, baseDir, where) {
       expect: a.expect === void 0 ? void 0 : String(a.expect),
       retries: typeof a.retries === "number" ? a.retries : 0,
       intervalSeconds: typeof a.intervalSeconds === "number" ? a.intervalSeconds : 5
-    }))
+    })),
+    openIssues: raw.openIssues !== false
   };
 }
 function requireString(value, where) {

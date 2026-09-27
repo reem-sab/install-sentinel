@@ -42,7 +42,7 @@ A full YAML parse sounds like the obvious check. Run across 1,121 Camunda Self-M
 
 ## Failing guides become issues
 
-A scheduled run that fails turns one job red, and nobody looks at scheduled jobs until something else breaks. With `open-issues`, a failed target opens an issue in the same repository, holding the heading, file, line, and last output of the step that broke. A hidden marker in the issue body names the target, so the next run finds the same issue: another failure updates it, and a pass comments and closes it. There is never more than one open issue per target. The calls go straight to the GitHub REST API with the job's token, so the feature adds no dependency. This repository turns it on for scheduled runs only, so a pull request run never opens an issue.
+A scheduled run that fails turns one job red, and nobody looks at scheduled jobs until something else breaks. With `open-issues`, a failed target opens an issue in the same repository, holding the heading, file, line, and last output of the step that broke. A hidden marker in the issue body names the target, so the next run finds the same issue: another failure updates it, and a pass comments and closes it. There is never more than one open issue per target. The calls go straight to the GitHub REST API with the job's token, so the feature adds no dependency. This repository turns it on for scheduled runs only, so a pull request run never opens an issue. A target can opt out with `openIssues: false` in the manifest, for example while it stops for a reason already known and tracked elsewhere.
 
 ## What it deliberately does not do
 

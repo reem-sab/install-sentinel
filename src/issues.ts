@@ -20,6 +20,8 @@ export type Decision =
 export const marker = (target: string) => `<!-- install-sentinel target=${target} -->`;
 
 export function decide(result: TargetResult, open: Issue[], runUrl: string): Decision {
+  // A target that is expected to stop, for a known reason, would keep one issue open for nothing.
+  if (!result.target.openIssues) return { action: "none" };
   const name = result.target.name;
   const existing = open.find((i) => i.body?.includes(marker(name)));
 

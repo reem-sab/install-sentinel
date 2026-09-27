@@ -7,7 +7,7 @@ const fixture = (name: string) => new URL(`./fixtures/${name}`, import.meta.url)
 
 const target = (guide: string): Target => ({
   name: "fixture", guide: fixture(guide), sections: [], teardown: [], skip: [], runDetails: false,
-  env: {}, substitutions: {}, stepTimeoutMinutes: 1, assertions: [],
+  env: {}, substitutions: {}, stepTimeoutMinutes: 1, assertions: [], openIssues: true,
 });
 
 const check = (guide: string) => {

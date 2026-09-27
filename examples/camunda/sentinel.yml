@@ -40,6 +40,8 @@ defaults:
 targets:
   - name: camunda-next
     guide: ../../camunda-docs/docs/self-managed/deployment/helm/cloud-providers/kind.md
+    # Off until the Helm v4 item in Possible next work is done.
+    openIssues: false
     env:
       # A target's env replaces the defaults, so repeat the storage choice here.
       SECONDARY_STORAGE: postgres

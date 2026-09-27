@@ -32948,7 +32948,8 @@ function toTarget(raw, baseDir, where) {
       expect: a.expect === void 0 ? void 0 : String(a.expect),
       retries: typeof a.retries === "number" ? a.retries : 0,
       intervalSeconds: typeof a.intervalSeconds === "number" ? a.intervalSeconds : 5
-    }))
+    })),
+    openIssues: raw.openIssues !== false
   };
 }
 function requireString(value, where) {
@@ -33384,6 +33385,7 @@ function renderFindings(findings, filesChecked) {
 // src/issues.ts
 var marker = (target) => `<!-- install-sentinel target=${target} -->`;
 function decide(result, open2, runUrl) {
+  if (!result.target.openIssues) return { action: "none" };
   const name = result.target.name;
   const existing = open2.find((i) => i.body?.includes(marker(name)));
   if (result.passed) {
