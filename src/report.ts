@@ -45,8 +45,8 @@ export function renderRunReport(results: TargetResult[]): string {
   return out.join("\n");
 }
 
-/** Where a failed target broke and what it printed. Shared by the report and the tracking issue. */
-export function renderFailure(r: TargetResult): string[] {
+/** Where a failed target broke and what it printed. */
+function renderFailure(r: TargetResult): string[] {
   const out: string[] = [];
   const f = r.failedStep;
   if (f) {

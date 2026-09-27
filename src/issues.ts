@@ -2,7 +2,7 @@
 // miss. A tracking issue stays open in the repository until the guide works
 // again, then closes itself. There is at most one open issue per target.
 
-import { renderFailure } from "./report.js";
+import path from "node:path";
 import type { TargetResult } from "./run.js";
 
 export interface Issue {
@@ -12,7 +12,7 @@ export interface Issue {
 
 export type Decision =
   | { action: "open"; title: string; body: string }
-  | { action: "update"; number: number; body: string }
+  | { action: "update"; number: number; title: string; body: string }
   | { action: "close"; number: number; comment: string }
   | { action: "none" };
 
@@ -27,12 +27,41 @@ export function decide(result: TargetResult, open: Issue[], runUrl: string): Dec
 
   if (result.passed) {
     if (!existing) return { action: "none" };
-    return { action: "close", number: existing.number, comment: `The guide for **${name}** passes again in [this run](${runUrl}).` };
+    return { action: "close", number: existing.number, comment: `${name}: run passed. Run: ${runUrl}` };
   }
 
-  const body = [marker(name), `The documented install path for **${name}** failed in [this run](${runUrl}).`, "", ...renderFailure(result)].join("\n");
-  if (existing) return { action: "update", number: existing.number, body };
-  return { action: "open", title: `Install guide fails: ${name}`, body };
+  // The title and body hold only facts from the run, so a reader sees where it
+  // stopped and what it printed, and draws their own conclusion.
+  const title = `${name}: run stopped at ${stoppedAt(result)}`;
+  const body = [marker(name), `Run: ${runUrl}`, "", ...facts(result)].join("\n");
+  if (existing) return { action: "update", number: existing.number, title, body };
+  return { action: "open", title, body };
+}
+
+/** The heading of the step that stopped the run, or the end state check that did. */
+function stoppedAt(result: TargetResult): string {
+  const step = result.failedStep?.step;
+  if (step) return step.block.headings.join(" > ") || "(no heading)";
+  return `end state check "${result.assertions.find((a) => !a.passed)?.assertion.name}"`;
+}
+
+function facts(result: TargetResult): string[] {
+  const out: string[] = [];
+  const f = result.failedStep;
+  if (f) {
+    const b = f.step.block;
+    out.push(`- Heading: ${stoppedAt(result)}`, `- File: \`${path.relative(process.cwd(), b.file) || b.file}\``, `- Line: ${b.line}`);
+    if (f.outcome) {
+      out.push(`- Exit code: ${f.outcome.exitCode}${f.outcome.timedOut ? " (timed out)" : ""}`);
+      out.push("", "Last output:", "", "```text", ...f.outcome.outputTail, "```");
+    } else if (f.error) {
+      out.push(`- Could not start: ${f.error}`);
+    }
+  }
+  for (const a of result.assertions.filter((x) => !x.passed)) {
+    out.push(`- End state check: ${a.assertion.name}`, `- Attempts: ${a.attempts}`, "", "Last output:", "", "```text", ...a.outputTail, "```");
+  }
+  return out;
 }
 
 /** Opens, updates, or closes one issue per target in `repository`, through the GitHub REST API. */
@@ -56,7 +85,7 @@ export async function syncIssues(
   const decisions = results.map((r) => decide(r, open, options.runUrl));
   for (const d of decisions) {
     if (d.action === "open") await call("POST", "/issues", { title: d.title, body: d.body });
-    if (d.action === "update") await call("PATCH", `/issues/${d.number}`, { body: d.body });
+    if (d.action === "update") await call("PATCH", `/issues/${d.number}`, { title: d.title, body: d.body });
     if (d.action === "close") {
       await call("POST", `/issues/${d.number}/comments`, { body: d.comment });
       await call("PATCH", `/issues/${d.number}`, { state: "closed", state_reason: "completed" });

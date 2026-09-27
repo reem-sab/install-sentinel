@@ -43,12 +43,16 @@ describe("syncIssues", () => {
   it("opens an issue with the failing heading, file, line, and output", async () => {
     const { writes } = await sync([result(false)], []);
     expect(writes).toHaveLength(1);
-    expect(writes[0]).toMatchObject({ method: "POST", route: "/issues", body: { title: "Install guide fails: demo" } });
+    expect(writes[0]).toMatchObject({ method: "POST", route: "/issues", body: { title: "demo: run stopped at Install > Deploy" } });
     const body = writes[0].body!.body as string;
     expect(body).toContain(marker("demo"));
-    expect(body).toContain("**Install > Deploy**");
-    expect(body).toContain("line 12");
+    expect(body).toContain("- Heading: Install > Deploy");
+    expect(body).toContain("- File: `docs/install.md`");
+    expect(body).toContain("- Line: 12");
+    expect(body).toContain("- Exit code: 1");
     expect(body).toContain("Error: boom");
+    // Facts only: no judgment words in the title or the body.
+    expect(`${writes[0].body!.title}\n${body}`).not.toMatch(/bug|broke|wrong|missing|fail/i);
   });
 
   it("updates the open issue for the same target instead of opening another", async () => {

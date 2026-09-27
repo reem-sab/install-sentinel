@@ -37,10 +37,10 @@ Always run `npm run all` before you finish a change. `dist/` is committed, becau
 | `src/manifest.ts` | Loads `sentinel.yml`, with hand-written validation. `defaults` merge shallowly into each target. Paths resolve relative to the manifest. |
 | `src/prerequisites.ts` | `checkPrerequisites()` takes the first word of each command in the runnable steps, including fetched reference scripts, and reports tools the guide's prerequisites section never mentions. Ignores shell keywords and a small allowlist of standard tools. |
 | `src/run.ts` | `plan()` selects blocks by section, skip pattern, and `<details>`. `runTarget()` checks prerequisites, records tool versions, runs the steps, then the assertions, then the teardown. Teardown always runs. |
-| `src/report.ts` | Renders Markdown for the job summary and terminal, plus the dry-run plan. Includes the Environment and Prerequisites sections. `renderFailure()` is shared with tracking issues. |
+| `src/report.ts` | Renders Markdown for the job summary and terminal, plus the dry-run plan. Includes the Environment and Prerequisites sections. |
 | `src/commands.ts` | `validatePaths()`, shared by the CLI and the action. Takes an optional list of changed files. |
 | `src/changed.ts` | Lists files a pull request changed, with `git diff --name-only` against the base commit from the event payload. Used by `changed-only` and `--changed-since`. |
-| `src/issues.ts` | `syncIssues()` opens, updates, or closes one issue per target in this repository, found by a hidden marker in the issue body. Uses `fetch` against the GitHub REST API. |
+| `src/issues.ts` | `syncIssues()` opens, updates, or closes one issue per target in this repository, found by a hidden marker in the issue body. The title is `<target>: run stopped at <heading>`, and the body holds only facts from the run. Uses `fetch` against the GitHub REST API. |
 | `src/main.ts` | Action entry point. Writes annotations on the exact docs line, a job summary, and outputs. |
 | `src/cli.ts` | Local CLI. |
 
