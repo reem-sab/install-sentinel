@@ -35,9 +35,12 @@ Always run `npm run all` before you finish a change. `dist/` is committed, becau
 | `src/validate.ts` | Static checks, no cluster needed. By default: `yaml-tab-indent`, `yaml-literal-backtick`, and `unclosed-fence`. Full YAML parsing is opt-in with `--strict`. |
 | `src/session.ts` | `ShellSession` runs each step in its own bash process. It carries `cwd` and exported variables between steps, so the run behaves like one terminal. It uses process-group kill for timeouts. |
 | `src/manifest.ts` | Loads `sentinel.yml`, with hand-written validation. `defaults` merge shallowly into each target. Paths resolve relative to the manifest. |
-| `src/run.ts` | `plan()` selects blocks by section, skip pattern, and `<details>`. `runTarget()` runs the steps, then the assertions, then the teardown. Teardown always runs. |
-| `src/report.ts` | Renders Markdown for the job summary and terminal, plus the dry-run plan. |
-| `src/commands.ts` | `validatePaths()`, shared by the CLI and the action. |
+| `src/prerequisites.ts` | `checkPrerequisites()` takes the first word of each command in the runnable steps, including fetched reference scripts, and reports tools the guide's prerequisites section never mentions. Ignores shell keywords and a small allowlist of standard tools. |
+| `src/run.ts` | `plan()` selects blocks by section, skip pattern, and `<details>`. `runTarget()` checks prerequisites, records tool versions, runs the steps, then the assertions, then the teardown. Teardown always runs. |
+| `src/report.ts` | Renders Markdown for the job summary and terminal, plus the dry-run plan. Includes the Environment and Prerequisites sections. `renderFailure()` is shared with tracking issues. |
+| `src/commands.ts` | `validatePaths()`, shared by the CLI and the action. Takes an optional list of changed files. |
+| `src/changed.ts` | Lists files a pull request changed, with `git diff --name-only` against the base commit from the event payload. Used by `changed-only` and `--changed-since`. |
+| `src/issues.ts` | `syncIssues()` opens, updates, or closes one issue per target in this repository, found by a hidden marker in the issue body. Uses `fetch` against the GitHub REST API. |
 | `src/main.ts` | Action entry point. Writes annotations on the exact docs line, a job summary, and outputs. |
 | `src/cli.ts` | Local CLI. |
 
@@ -100,6 +103,6 @@ Commit messages use the `type(scope): description` format, in present tense.
 
 Ask before starting any of these.
 
-1. Install Helm v4 for the camunda-next target only, matching the version pinned in `camunda-deployment-references/.tool-versions`, so the Next guide can run past Deploy Camunda 8. As of Sept 25, 2026, that file on `main` pins `helm 4.2.3`. Have the workflow read the version from `.tool-versions` at run time instead of hardcoding 4.2.3, because the pin will change.
+1. Install Helm v4 for the camunda-next target only, matching the version pinned in `camunda-deployment-references/.tool-versions`, so the Next guide can run past Deploy Camunda 8. Until then, each scheduled run keeps the camunda-next tracking issue open. As of Sept 25, 2026, that file on `main` pins `helm 4.2.3`. Have the workflow read the version from `.tool-versions` at run time instead of hardcoding 4.2.3, because the pin will change.
 2. Add a README badge for `install-check.yml`.
 3. Add a `validate` job that checks `camunda-docs` Self-Managed pages weekly and reports without failing the build.
